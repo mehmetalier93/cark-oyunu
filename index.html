@@ -345,37 +345,6 @@
     .history-item strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .history-item .order { display:grid; place-items:center; width:24px; height:24px; flex:0 0 auto; border-radius:50%; color:#ffd8df; background:rgba(255,102,133,.15); }
 
-    .overlay {
-      position: fixed;
-      z-index: 30;
-      inset: 0;
-      display: none;
-      place-items: center;
-      padding: 20px;
-      background: rgba(4,5,10,.78);
-      backdrop-filter: blur(13px);
-    }
-    .overlay.show { display:grid; animation:fadeIn .25s ease; }
-    .result-modal {
-      width:min(520px,100%);
-      padding:30px;
-      text-align:center;
-      border:1px solid var(--border);
-      border-radius:30px;
-      background:
-        radial-gradient(circle at 50% 0%, rgba(155,135,255,.24), transparent 42%),
-        linear-gradient(155deg, rgba(29,34,58,.98), rgba(10,12,23,.98));
-      box-shadow:0 35px 100px rgba(0,0,0,.62);
-      animation:modalPop .48s cubic-bezier(.2,.8,.2,1);
-    }
-    .result-modal.danger { box-shadow:0 35px 100px rgba(0,0,0,.62), 0 0 70px rgba(255,102,133,.13); }
-    .result-emoji { font-size:4.3rem; }
-    .result-label { margin-top:9px; color:var(--muted); font-size:.78rem; letter-spacing:.15em; text-transform:uppercase; font-weight:1000; }
-    .result-name { margin-top:8px; overflow-wrap:anywhere; font-size:clamp(2.3rem,8vw,4.3rem); line-height:.95; font-weight:1000; letter-spacing:-.06em; }
-    .result-copy { margin:13px auto 0; max-width:390px; color:#d1d6e8; line-height:1.6; }
-    .modal-actions { display:flex; justify-content:center; gap:9px; margin-top:20px; }
-    .modal-actions .btn { min-width:150px; }
-
     .confetti { position:fixed; z-index:50; top:-20px; width:10px; height:18px; pointer-events:none; animation:confettiFall linear forwards; }
     .spark { position:fixed; z-index:49; width:7px; height:7px; border-radius:50%; pointer-events:none; animation:sparkFly .9s ease-out forwards; }
 
@@ -413,8 +382,6 @@
       .stat { padding:8px 9px; }
       .pointer { border-left-width:14px; border-right-width:14px; border-bottom-width:30px; }
       .wheel-center { width:62px; height:62px; border-width:5px; }
-      .modal-actions { flex-direction:column; }
-      .modal-actions .btn { width:100%; }
     }
     @media (prefers-reduced-motion:reduce) {
       *,*::before,*::after { animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important; }
@@ -456,7 +423,7 @@
 
         <div class="switch-row">
           <div class="switch-copy"><b>3-2-1 geri sayım</b><small>Her çarktan önce gerilim oluşturur</small></div>
-          <label class="switch"><input id="countdownToggle" type="checkbox" checked><span class="slider"></span></label>
+          <label class="switch"><input id="countdownToggle" type="checkbox"><span class="slider"></span></label>
         </div>
 
         <div class="actions">
@@ -504,19 +471,6 @@
     </section>
   </main>
 
-  <div id="resultOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="resultName">
-    <div id="resultModal" class="result-modal">
-      <div id="resultEmoji" class="result-emoji">💥</div>
-      <div id="resultLabel" class="result-label">Çarkın seçtiği isim</div>
-      <div id="resultName" class="result-name">—</div>
-      <p id="resultCopy" class="result-copy">—</p>
-      <div class="modal-actions">
-        <button id="continueButton" class="btn btn-primary" type="button">Devam Et</button>
-        <button id="newGameButton" class="btn btn-secondary" type="button">Yeni Oyun</button>
-      </div>
-    </div>
-  </div>
-
   <script>
     "use strict";
 
@@ -555,14 +509,6 @@
       remainingList: document.getElementById("remainingList"),
       historyHint: document.getElementById("historyHint"),
       historyList: document.getElementById("historyList"),
-      resultOverlay: document.getElementById("resultOverlay"),
-      resultModal: document.getElementById("resultModal"),
-      resultEmoji: document.getElementById("resultEmoji"),
-      resultLabel: document.getElementById("resultLabel"),
-      resultName: document.getElementById("resultName"),
-      resultCopy: document.getElementById("resultCopy"),
-      continueButton: document.getElementById("continueButton"),
-      newGameButton: document.getElementById("newGameButton")
     };
 
     const ctx = els.wheelCanvas.getContext("2d");
@@ -789,7 +735,6 @@
       els.stageKicker.textContent = "Çark hazır";
       els.stageName.textContent = `${state.remaining.length} kişi`;
       els.stageText.textContent = "Butona bas; çark bir kişiyi seçip oyundan çıkarsın.";
-      els.resultOverlay.classList.remove("show");
       renderAll();
       speak(`Oyun başladı. Kaybeden ${state.gift} ısmarlayacak.`);
       playTone(520, .08, "sine", .06);
@@ -890,29 +835,14 @@
     }
 
     function showElimination(person) {
-      els.resultModal.classList.add("danger");
-      els.resultEmoji.textContent = "💥";
-      els.resultLabel.textContent = "Bu tur elenen";
-      els.resultName.textContent = person.name;
-      els.resultCopy.textContent = `${state.remaining.length - 1} kişi oyunda kalacak. Çark küçülüyor, gerilim yükseliyor.`;
-      els.continueButton.textContent = "Çarktan Çıkar";
-      els.continueButton.style.display = "inline-flex";
-      els.newGameButton.style.display = "none";
-      els.resultOverlay.classList.add("show");
-      speak(`${person.name} elendi.`);
-    }
-
-    function confirmElimination() {
-      const person = state.pendingEliminated;
-      if (!person) return;
-
+      if (state.pendingEliminated?.id !== person.id) return;
       const index = state.remaining.findIndex(p => p.id === person.id);
-      if (index >= 0) state.remaining.splice(index, 1);
+      if (index < 0) return;
+      state.remaining.splice(index, 1);
       state.history.push(person);
       state.pendingEliminated = null;
       state.rotation = 0;
       state.spinning = false;
-      els.resultOverlay.classList.remove("show");
 
       if (state.remaining.length === 1) {
         finishGame();
@@ -921,14 +851,15 @@
 
       els.resetButton.disabled = false;
       els.mainButton.disabled = false;
-      els.liveBadge.textContent = state.remaining.length === 2 ? "Final düellosu" : `${state.remaining.length} kişi kaldı`;
-      els.stageIcon.textContent = state.remaining.length === 2 ? "⚔️" : "🎯";
-      els.stageKicker.textContent = state.remaining.length === 2 ? "Son iki isim" : "Sıradaki tur";
-      els.stageName.textContent = state.remaining.length === 2 ? "Final başlıyor" : "Çarkı yeniden çevir";
+      els.liveBadge.textContent = state.remaining.length === 2 ? "Final düellosu" : state.remaining.length + " kişi kaldı";
+      els.stageIcon.textContent = "💥";
+      els.stageKicker.textContent = "Bu tur elenen";
+      els.stageName.textContent = person.name;
       els.stageText.textContent = state.remaining.length === 2
-        ? "Bir kişi kurtulacak, son kalan hesabı ödeyecek."
-        : `${state.remaining.length} kişi hâlâ oyunda.`;
+        ? "Son iki kişi kaldı. Final için çarkı yeniden çevir."
+        : state.remaining.length + " kişi oyunda kaldı. Sıradaki tur için çarkı yeniden çevir.";
       renderAll();
+      speak(person.name + " elendi.");
     }
 
     function finishGame() {
@@ -942,22 +873,11 @@
       els.stageIcon.textContent = "🏆";
       els.stageKicker.textContent = "Kaybeden belli oldu";
       els.stageName.textContent = loser.name;
-      els.stageText.textContent = `${state.gift} ısmarlıyor!`;
+      els.stageText.textContent = state.gift + " ısmarlıyor!";
       renderAll();
-
-      window.setTimeout(() => {
-        els.resultModal.classList.remove("danger");
-        els.resultEmoji.textContent = "🏆";
-        els.resultLabel.textContent = "Gecenin kaybedeni";
-        els.resultName.textContent = loser.name;
-        els.resultCopy.textContent = `${state.gift} ısmarlıyor! Kaçış yok; çark kararını verdi.`;
-        els.continueButton.style.display = "none";
-        els.newGameButton.style.display = "inline-flex";
-        els.resultOverlay.classList.add("show");
-        createConfetti();
-        playVictory();
-        speak(`Kaybeden ${loser.name}. ${state.gift} ısmarlıyor.`);
-      }, 500);
+      createConfetti();
+      playVictory();
+      speak("Kaybeden " + loser.name + ". " + state.gift + " ısmarlıyor.");
     }
 
     function resetGame() {
@@ -978,7 +898,6 @@
       els.resetButton.disabled = false;
       els.mainButton.disabled = false;
       els.mainButton.textContent = "Oyunu Başlat";
-      els.resultOverlay.classList.remove("show");
       els.liveBadge.textContent = "Hazırlanıyor";
       els.stageIcon.textContent = "🎯";
       els.stageKicker.textContent = "Başlamaya hazır";
@@ -1122,8 +1041,6 @@
     });
 
     els.resetButton.addEventListener("click", resetGame);
-    els.continueButton.addEventListener("click", confirmElimination);
-    els.newGameButton.addEventListener("click", resetGame);
     els.soundToggle.addEventListener("click", () => {
       state.soundEnabled = !state.soundEnabled;
       els.soundToggle.classList.toggle("off", !state.soundEnabled);
@@ -1140,9 +1057,6 @@
       if (event.code === "Space" && !["TEXTAREA","INPUT"].includes(document.activeElement.tagName)) {
         event.preventDefault();
         els.mainButton.click();
-      }
-      if (event.key === "Escape" && els.resultOverlay.classList.contains("show") && !state.finished) {
-        // Eleme sonucu onaylanmadan kapatılmasın.
       }
     });
 
