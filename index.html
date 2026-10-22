@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#090b16" />
+  <title>Şansına Ne Çıkarsa — Çarklı Eleme Oyunu</title>
+  <style>
+    :root {
+      --bg: #080a13;
+      --panel: rgba(19, 23, 42, 0.86);
+      --panel-2: rgba(29, 34, 58, 0.76);
+      --text: #f7f8ff;
+      --muted: #aeb5cc;
+      --accent: #9b87ff;
+      --accent-2: #58e5ed;
+      --danger: #ff6685;
+      --success: #5ce2a2;
+      --warning: #ffca58;
+      --border: rgba(255,255,255,.105);
+      --shadow: 0 28px 90px rgba(0,0,0,.42);
+      --radius: 26px;
+    }
+
+    * { box-sizing: border-box; }
+    html { min-height: 100%; background: var(--bg); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(155,135,255,.22), transparent 28%),
+        radial-gradient(circle at 88% 12%, rgba(88,229,237,.15), transparent 25%),
+        radial-gradient(circle at 50% 100%, rgba(255,102,133,.13), transparent 36%),
+        linear-gradient(145deg, #070912, #11162b 56%, #090b15);
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .16;
+      background-image:
+        linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: linear-gradient(to bottom, #000, transparent 86%);
+    }
+
+    button, textarea, input { font: inherit; }
+    button { border: 0; color: inherit; }
+
+    .app-shell {
+      width: min(1320px, calc(100% - 30px));
+      margin: 0 auto;
+      padding: 32px 0 54px;
+    }
+
+    .hero {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 22px;
+      margin-bottom: 22px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--accent-2);
+      background: rgba(88,229,237,.07);
+      font-size: .75rem;
+      font-weight: 900;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.1rem, 5vw, 4.5rem);
+      line-height: .98;
+      letter-spacing: -.055em;
+      background: linear-gradient(100deg, #fff 6%, #c2b9ff 48%, #72eff4 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      max-width: 720px;
+      margin: 14px 0 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .top-actions { display: flex; gap: 9px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .icon-btn {
+      min-height: 44px;
+      padding: 10px 13px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,.06);
+      cursor: pointer;
+      transition: .2s ease;
+    }
+    .icon-btn:hover { transform: translateY(-1px); background: rgba(255,255,255,.1); }
+    .icon-btn.off { color: #ffc4d0; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(300px, .76fr) minmax(480px, 1.24fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      padding: 22px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(155deg, var(--panel), rgba(12,15,28,.94));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      width: 190px;
+      height: 190px;
+      right: -110px;
+      top: -115px;
+      border-radius: 50%;
+      background: rgba(155,135,255,.12);
+      pointer-events: none;
+    }
+
+    .card-title { margin: 0 0 6px; font-size: 1.12rem; }
+    .card-subtitle { margin: 0 0 17px; color: var(--muted); font-size: .9rem; line-height: 1.55; }
+    .field-label { display: block; margin: 14px 0 8px; color: #dfe3f2; font-size: .82rem; font-weight: 800; }
+
+    textarea, .text-input {
+      width: 100%;
+      color: var(--text);
+      outline: none;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(6,8,17,.58);
+      transition: .2s ease;
+    }
+    textarea { min-height: 116px; resize: vertical; padding: 14px; line-height: 1.55; }
+    .text-input { height: 47px; padding: 0 13px; }
+    textarea:focus, .text-input:focus { border-color: rgba(155,135,255,.7); box-shadow: 0 0 0 4px rgba(155,135,255,.11); }
+    textarea:disabled, .text-input:disabled { opacity: .55; cursor: not-allowed; }
+
+    .counter { margin-top: 6px; color: var(--muted); font-size: .78rem; text-align: right; }
+
+    .gift-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .gift-option { position: relative; }
+    .gift-option input { position: absolute; opacity: 0; }
+    .gift-option span {
+      display: grid;
+      place-items: center;
+      min-height: 60px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: rgba(255,255,255,.045);
+      color: var(--muted);
+      font-size: .8rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: .2s ease;
+    }
+    .gift-option b { display: block; font-size: 1.35rem; }
+    .gift-option input:checked + span {
+      color: #fff;
+      border-color: rgba(155,135,255,.72);
+      background: linear-gradient(145deg, rgba(155,135,255,.23), rgba(88,229,237,.08));
+      box-shadow: 0 0 0 3px rgba(155,135,255,.08);
+    }
+
+    .switch-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      align-items: center;
+      margin-top: 15px;
+      padding: 12px 13px;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: rgba(255,255,255,.035);
+    }
+    .switch-copy b { display: block; font-size: .84rem; }
+    .switch-copy small { color: var(--muted); }
+    .switch { position: relative; width: 48px; height: 27px; flex: 0 0 auto; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; inset: 0; border-radius: 999px; background: #3d4257; cursor: pointer; transition: .2s; }
+    .slider::before { content:""; position:absolute; width:21px; height:21px; left:3px; top:3px; border-radius:50%; background:#fff; transition:.2s; }
+    .switch input:checked + .slider { background: linear-gradient(90deg, var(--accent), var(--accent-2)); }
+    .switch input:checked + .slider::before { transform: translateX(21px); }
+
+    .actions { display: grid; grid-template-columns: 1fr .58fr; gap: 9px; margin-top: 16px; }
+    .btn {
+      min-height: 50px;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform .2s ease, opacity .2s ease, filter .2s ease;
+    }
+    .btn:hover:not(:disabled) { transform: translateY(-2px); filter: brightness(1.06); }
+    .btn:disabled { opacity: .48; cursor: not-allowed; }
+    .btn-primary { color: #070814; background: linear-gradient(100deg, #b7a8ff, #63e8ee); box-shadow: 0 13px 32px rgba(88,229,237,.18); }
+    .btn-secondary { background: rgba(255,255,255,.07); border: 1px solid var(--border); }
+
+    .notice { display: none; margin-top: 12px; padding: 11px 13px; border: 1px solid rgba(255,102,133,.35); border-radius: 13px; color: #ffd4dc; background: rgba(255,102,133,.1); font-size: .83rem; }
+    .notice.show { display: block; }
+
+    .game-card { min-height: 700px; }
+    .status-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 14px; }
+    .stat { min-width: 0; padding: 10px 12px; border: 1px solid var(--border); border-radius: 15px; background: rgba(255,255,255,.04); }
+    .stat-label { display:block; color: var(--muted); font-size: .68rem; text-transform: uppercase; letter-spacing: .09em; font-weight: 900; }
+    .stat-value { display:block; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight: 900; }
+
+    .wheel-zone {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(330px, 1fr) 250px;
+      gap: 18px;
+      align-items: center;
+      min-height: 510px;
+      padding: 15px;
+      border: 1px solid var(--border);
+      border-radius: 23px;
+      background:
+        radial-gradient(circle at 40% 48%, rgba(155,135,255,.15), transparent 34%),
+        linear-gradient(150deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+      transition: .35s ease;
+    }
+
+    .wheel-zone.final-duel {
+      border-color: rgba(255,202,88,.48);
+      box-shadow: inset 0 0 45px rgba(255,202,88,.07), 0 0 35px rgba(255,102,133,.08);
+    }
+
+    .wheel-wrap {
+      position: relative;
+      width: min(100%, 490px);
+      aspect-ratio: 1;
+      margin: auto;
+      filter: drop-shadow(0 24px 35px rgba(0,0,0,.44));
+    }
+
+    .wheel-wrap.spinning { animation: wheelPulse .58s ease-in-out infinite alternate; }
+    .wheel-wrap.hit { animation: hitFlash .55s ease; }
+
+    #wheelCanvas { display:block; width:100%; height:100%; }
+
+    .pointer {
+      position: absolute;
+      z-index: 5;
+      left: 50%;
+      top: -8px;
+      width: 0;
+      height: 0;
+      transform: translateX(-50%);
+      border-left: 18px solid transparent;
+      border-right: 18px solid transparent;
+      border-top: 0;
+      border-bottom: 37px solid #fff;
+      filter: drop-shadow(0 5px 6px rgba(0,0,0,.55));
+    }
+    .pointer::after { content:""; position:absolute; width:12px; height:12px; left:-6px; top:7px; border-radius:50%; background:var(--danger); box-shadow:0 0 18px rgba(255,102,133,.85); }
+
+    .wheel-center {
+      position: absolute;
+      z-index: 4;
+      left: 50%;
+      top: 50%;
+      width: 76px;
+      height: 76px;
+      transform: translate(-50%,-50%);
+      display: grid;
+      place-items: center;
+      border: 7px solid rgba(255,255,255,.9);
+      border-radius: 50%;
+      color: #0b0d17;
+      background: linear-gradient(145deg,#fff,#dcd6ff);
+      box-shadow: 0 8px 25px rgba(0,0,0,.35), 0 0 30px rgba(155,135,255,.25);
+      font-size: 1.4rem;
+      font-weight: 1000;
+    }
+
+    .stage-panel { display:flex; flex-direction:column; gap:10px; min-width:0; }
+    .live-badge {
+      align-self:flex-start;
+      display:inline-flex;
+      align-items:center;
+      gap:7px;
+      padding:7px 10px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      color:var(--accent-2);
+      background:rgba(88,229,237,.07);
+      font-size:.7rem;
+      font-weight:900;
+      letter-spacing:.09em;
+      text-transform:uppercase;
+    }
+    .live-badge::before { content:""; width:7px; height:7px; border-radius:50%; background:currentColor; box-shadow:0 0 12px currentColor; }
+    .stage-icon { font-size: 3rem; line-height:1; margin-top:9px; }
+    .stage-kicker { color:var(--muted); font-size:.74rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase; }
+    .stage-name { overflow-wrap:anywhere; font-size:clamp(1.65rem,4vw,3rem); font-weight:1000; line-height:.98; letter-spacing:-.045em; }
+    .stage-text { margin:0; color:var(--muted); line-height:1.55; font-size:.9rem; }
+
+    .countdown { display:none; margin-top:4px; font-size:4rem; font-weight:1000; line-height:1; color:var(--warning); text-shadow:0 0 30px rgba(255,202,88,.35); animation:countPop .65s ease; }
+    .countdown.show { display:block; }
+
+    .remaining-box, .history-box { margin-top: 14px; }
+    .section-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; }
+    .section-heading h3 { margin:0; font-size:.9rem; }
+    .section-heading span { color:var(--muted); font-size:.76rem; }
+    .chips { display:flex; flex-wrap:wrap; gap:7px; min-height:35px; }
+    .chip { padding:7px 10px; border:1px solid var(--border); border-radius:999px; background:rgba(255,255,255,.05); font-size:.79rem; font-weight:800; animation:chipIn .3s ease both; }
+    .chip.finalist { color:#181207; border-color:rgba(255,202,88,.65); background:linear-gradient(100deg,#ffe092,#ffbc58); }
+
+    .history-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; max-height:130px; overflow:auto; padding-right:3px; }
+    .history-item { display:flex; align-items:center; gap:8px; min-width:0; padding:8px 10px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,.035); font-size:.78rem; }
+    .history-item strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .history-item .order { display:grid; place-items:center; width:24px; height:24px; flex:0 0 auto; border-radius:50%; color:#ffd8df; background:rgba(255,102,133,.15); }
+
+    .overlay {
+      position: fixed;
+      z-index: 30;
+      inset: 0;
+      display: none;
+      place-items: center;
+      padding: 20px;
+      background: rgba(4,5,10,.78);
+      backdrop-filter: blur(13px);
+    }
+    .overlay.show { display:grid; animation:fadeIn .25s ease; }
+    .result-modal {
+      width:min(520px,100%);
+      padding:30px;
+      text-align:center;
+      border:1px solid var(--border);
+      border-radius:30px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(155,135,255,.24), transparent 42%),
+        linear-gradient(155deg, rgba(29,34,58,.98), rgba(10,12,23,.98));
+      box-shadow:0 35px 100px rgba(0,0,0,.62);
+      animation:modalPop .48s cubic-bezier(.2,.8,.2,1);
+    }
+    .result-modal.danger { box-shadow:0 35px 100px rgba(0,0,0,.62), 0 0 70px rgba(255,102,133,.13); }
+    .result-emoji { font-size:4.3rem; }
+    .result-label { margin-top:9px; color:var(--muted); font-size:.78rem; letter-spacing:.15em; text-transform:uppercase; font-weight:1000; }
+    .result-name { margin-top:8px; overflow-wrap:anywhere; font-size:clamp(2.3rem,8vw,4.3rem); line-height:.95; font-weight:1000; letter-spacing:-.06em; }
+    .result-copy { margin:13px auto 0; max-width:390px; color:#d1d6e8; line-height:1.6; }
+    .modal-actions { display:flex; justify-content:center; gap:9px; margin-top:20px; }
+    .modal-actions .btn { min-width:150px; }
+
+    .confetti { position:fixed; z-index:50; top:-20px; width:10px; height:18px; pointer-events:none; animation:confettiFall linear forwards; }
+    .spark { position:fixed; z-index:49; width:7px; height:7px; border-radius:50%; pointer-events:none; animation:sparkFly .9s ease-out forwards; }
+
+    @keyframes wheelPulse { from{filter:drop-shadow(0 24px 35px rgba(0,0,0,.44));} to{filter:drop-shadow(0 24px 45px rgba(88,229,237,.22));} }
+    @keyframes hitFlash { 0%,100%{transform:scale(1)} 35%{transform:scale(1.025)} 65%{transform:scale(.99)} }
+    @keyframes countPop { 0%{opacity:0;transform:scale(.55)} 55%{opacity:1;transform:scale(1.14)} 100%{transform:scale(1)} }
+    @keyframes chipIn { from{opacity:0;transform:translateY(4px)} to{opacity:1;transform:none} }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    @keyframes modalPop { from{opacity:0;transform:scale(.82) translateY(18px)} to{opacity:1;transform:none} }
+    @keyframes confettiFall { to{transform:translate3d(var(--drift),110vh,0) rotate(900deg);opacity:.1} }
+    @keyframes sparkFly { to{transform:translate(var(--x),var(--y)) scale(0);opacity:0} }
+
+    @media (max-width: 1040px) {
+      .layout { grid-template-columns: 1fr; }
+      .game-card { min-height:auto; }
+      .wheel-zone { grid-template-columns:minmax(300px,1fr) 280px; }
+    }
+    @media (max-width: 720px) {
+      .app-shell { width:min(100% - 18px,1320px); padding-top:18px; }
+      .hero { align-items:flex-start; flex-direction:column; }
+      .top-actions { justify-content:flex-start; }
+      .card { padding:15px; border-radius:20px; }
+      .wheel-zone { grid-template-columns:1fr; padding:9px; }
+      .wheel-wrap { width:min(100%,430px); }
+      .stage-panel { text-align:center; align-items:center; padding:2px 12px 14px; }
+      .status-bar { grid-template-columns:1fr 1fr; }
+      .history-list { grid-template-columns:1fr; }
+    }
+    @media (max-width: 480px) {
+      .gift-grid { grid-template-columns:1fr; }
+      .gift-option span { min-height:48px; display:flex; gap:9px; }
+      .gift-option b { display:inline; }
+      .actions { grid-template-columns:1fr; }
+      .status-bar { gap:6px; }
+      .stat { padding:8px 9px; }
+      .pointer { border-left-width:14px; border-right-width:14px; border-bottom-width:30px; }
+      .wheel-center { width:62px; height:62px; border-width:5px; }
+      .modal-actions { flex-direction:column; }
+      .modal-actions .btn { width:100%; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      *,*::before,*::after { animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">🎡 Çarklı Parti Oyunu</div>
+        <h1>Şansına Ne Çıkarsa</h1>
+        <p>İsimleri çarka bırak, her turda bir kişiyi dramatik biçimde ele. Son kalan kişi seçilen hediyeyi ısmarlar.</p>
+      </div>
+      <div class="top-actions">
+        <button id="soundToggle" class="icon-btn" type="button">🔊 Ses açık</button>
+        <button id="fullscreenButton" class="icon-btn" type="button">⛶ Tam ekran</button>
+      </div>
+    </header>
+
+    <section class="layout">
+      <aside class="card setup-card">
+        <h2 class="card-title">Oyunu Hazırla</h2>
+        <p class="card-subtitle">İsimleri virgülle veya alt alta yaz. Aynı isim yalnızca bir kez çarka eklenir.</p>
+
+        <label class="field-label" for="namesInput">Katılımcılar</label>
+        <textarea id="namesInput" spellcheck="false">Ali, Veli, Ayşe, Mehmet, Ece, Berk</textarea>
+        <div id="nameCounter" class="counter">6 kişi algılandı</div>
+
+        <label class="field-label">Hediye / Ceza</label>
+        <div class="gift-grid">
+          <label class="gift-option"><input type="radio" name="gift" value="Starbucks" checked><span><b>☕</b>Starbucks</span></label>
+          <label class="gift-option"><input type="radio" name="gift" value="Soda"><span><b>🥤</b>Soda</span></label>
+          <label class="gift-option"><input type="radio" name="gift" value="Dondurma"><span><b>🍦</b>Dondurma</span></label>
+        </div>
+
+        <label class="field-label" for="customGift">Özel seçenek</label>
+        <input id="customGift" class="text-input" type="text" maxlength="42" placeholder="Örnek: Akşam yemeği" />
+
+        <div class="switch-row">
+          <div class="switch-copy"><b>3-2-1 geri sayım</b><small>Her çarktan önce gerilim oluşturur</small></div>
+          <label class="switch"><input id="countdownToggle" type="checkbox" checked><span class="slider"></span></label>
+        </div>
+
+        <div class="actions">
+          <button id="mainButton" class="btn btn-primary" type="button">Oyunu Başlat</button>
+          <button id="resetButton" class="btn btn-secondary" type="button">Sıfırla</button>
+        </div>
+        <div id="notice" class="notice" role="alert"></div>
+      </aside>
+
+      <section class="card game-card">
+        <div class="status-bar">
+          <div class="stat"><span class="stat-label">Durum</span><span id="statusValue" class="stat-value">Hazır</span></div>
+          <div class="stat"><span class="stat-label">Kalan</span><span id="remainingValue" class="stat-value">—</span></div>
+          <div class="stat"><span class="stat-label">Tur</span><span id="roundValue" class="stat-value">—</span></div>
+          <div class="stat"><span class="stat-label">Hediye</span><span id="giftValue" class="stat-value">Starbucks</span></div>
+        </div>
+
+        <div id="wheelZone" class="wheel-zone">
+          <div id="wheelWrap" class="wheel-wrap">
+            <div class="pointer" aria-hidden="true"></div>
+            <canvas id="wheelCanvas" width="900" height="900" aria-label="İsim çarkı"></canvas>
+            <div class="wheel-center">GO</div>
+          </div>
+
+          <div class="stage-panel" aria-live="polite">
+            <div id="liveBadge" class="live-badge">Hazırlanıyor</div>
+            <div id="stageIcon" class="stage-icon">🎯</div>
+            <div id="stageKicker" class="stage-kicker">Başlamaya hazır</div>
+            <div id="stageName" class="stage-name">Kim elenecek?</div>
+            <p id="stageText" class="stage-text">Oyunu başlat. Her turda çark bir kişiyi seçip oyundan çıkaracak.</p>
+            <div id="countdown" class="countdown">3</div>
+          </div>
+        </div>
+
+        <div class="remaining-box">
+          <div class="section-heading"><h3>Çarktaki isimler</h3><span id="remainingHint">Henüz başlamadı</span></div>
+          <div id="remainingList" class="chips"></div>
+        </div>
+
+        <div class="history-box">
+          <div class="section-heading"><h3>Eleme geçmişi</h3><span id="historyHint">0 eleme</span></div>
+          <div id="historyList" class="history-list"></div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div id="resultOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="resultName">
+    <div id="resultModal" class="result-modal">
+      <div id="resultEmoji" class="result-emoji">💥</div>
+      <div id="resultLabel" class="result-label">Çarkın seçtiği isim</div>
+      <div id="resultName" class="result-name">—</div>
+      <p id="resultCopy" class="result-copy">—</p>
+      <div class="modal-actions">
+        <button id="continueButton" class="btn btn-primary" type="button">Devam Et</button>
+        <button id="newGameButton" class="btn btn-secondary" type="button">Yeni Oyun</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const TAU = Math.PI * 2;
+    const palette = [
+      ["#8f7cff", "#6d58ea"], ["#4ddce7", "#269baa"], ["#ff6685", "#d94769"],
+      ["#ffc857", "#dc9131"], ["#58df9d", "#279a68"], ["#ff8b5f", "#d45a35"],
+      ["#6da7ff", "#3d68cc"], ["#d97aff", "#9c49c8"], ["#7de0c3", "#3eaa8b"],
+      ["#f17fc2", "#b93c88"], ["#a7d55c", "#668f2e"], ["#f0a95a", "#b76f25"]
+    ];
+
+    const els = {
+      namesInput: document.getElementById("namesInput"),
+      nameCounter: document.getElementById("nameCounter"),
+      customGift: document.getElementById("customGift"),
+      countdownToggle: document.getElementById("countdownToggle"),
+      mainButton: document.getElementById("mainButton"),
+      resetButton: document.getElementById("resetButton"),
+      notice: document.getElementById("notice"),
+      soundToggle: document.getElementById("soundToggle"),
+      fullscreenButton: document.getElementById("fullscreenButton"),
+      statusValue: document.getElementById("statusValue"),
+      remainingValue: document.getElementById("remainingValue"),
+      roundValue: document.getElementById("roundValue"),
+      giftValue: document.getElementById("giftValue"),
+      wheelZone: document.getElementById("wheelZone"),
+      wheelWrap: document.getElementById("wheelWrap"),
+      wheelCanvas: document.getElementById("wheelCanvas"),
+      liveBadge: document.getElementById("liveBadge"),
+      stageIcon: document.getElementById("stageIcon"),
+      stageKicker: document.getElementById("stageKicker"),
+      stageName: document.getElementById("stageName"),
+      stageText: document.getElementById("stageText"),
+      countdown: document.getElementById("countdown"),
+      remainingHint: document.getElementById("remainingHint"),
+      remainingList: document.getElementById("remainingList"),
+      historyHint: document.getElementById("historyHint"),
+      historyList: document.getElementById("historyList"),
+      resultOverlay: document.getElementById("resultOverlay"),
+      resultModal: document.getElementById("resultModal"),
+      resultEmoji: document.getElementById("resultEmoji"),
+      resultLabel: document.getElementById("resultLabel"),
+      resultName: document.getElementById("resultName"),
+      resultCopy: document.getElementById("resultCopy"),
+      continueButton: document.getElementById("continueButton"),
+      newGameButton: document.getElementById("newGameButton")
+    };
+
+    const ctx = els.wheelCanvas.getContext("2d");
+
+    const state = {
+      started: false,
+      spinning: false,
+      finished: false,
+      soundEnabled: true,
+      participants: [],
+      remaining: [],
+      history: [],
+      gift: "Starbucks",
+      round: 0,
+      rotation: 0,
+      selectedIndex: -1,
+      pendingEliminated: null,
+      audioContext: null,
+      tickTimer: null
+    };
+
+    function parseNames() {
+      const seen = new Set();
+      return els.namesInput.value
+        .split(/[\n,;]+/)
+        .map(name => name.trim().replace(/\s+/g, " "))
+        .filter(Boolean)
+        .filter(name => {
+          const key = name.toLocaleLowerCase("tr-TR");
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, 40)
+        .map((name, index) => ({ id: `${Date.now()}-${index}`, name }));
+    }
+
+    function selectedGift() {
+      const custom = els.customGift.value.trim();
+      if (custom) return custom;
+      return document.querySelector('input[name="gift"]:checked')?.value || "Starbucks";
+    }
+
+    function secureRandomIndex(length) {
+      if (length <= 1) return 0;
+      if (window.crypto?.getRandomValues) {
+        const max = Math.floor(0x100000000 / length) * length;
+        const values = new Uint32Array(1);
+        do window.crypto.getRandomValues(values); while (values[0] >= max);
+        return values[0] % length;
+      }
+      return Math.floor(Math.random() * length);
+    }
+
+    function updateNameCounter() {
+      const count = parseNames().length;
+      els.nameCounter.textContent = `${count} kişi algılandı${count >= 40 ? " · en fazla 40" : ""}`;
+      if (!state.started) drawPreview();
+    }
+
+    function showNotice(message) {
+      els.notice.textContent = message;
+      els.notice.classList.add("show");
+    }
+
+    function hideNotice() { els.notice.classList.remove("show"); }
+
+    function setSetupDisabled(disabled) {
+      els.namesInput.disabled = disabled;
+      els.customGift.disabled = disabled;
+      els.countdownToggle.disabled = disabled;
+      document.querySelectorAll('input[name="gift"]').forEach(input => input.disabled = disabled);
+    }
+
+    function fitText(text, maxChars) {
+      if (text.length <= maxChars) return text;
+      return `${text.slice(0, Math.max(2, maxChars - 1))}…`;
+    }
+
+    function drawWheel(items = state.remaining, rotation = state.rotation) {
+      const canvas = els.wheelCanvas;
+      const size = canvas.width;
+      const center = size / 2;
+      const outer = size * .455;
+      const inner = size * .115;
+
+      ctx.clearRect(0, 0, size, size);
+      ctx.save();
+      ctx.translate(center, center);
+
+      ctx.beginPath();
+      ctx.arc(0, 0, outer + 22, 0, TAU);
+      ctx.fillStyle = "rgba(255,255,255,.09)";
+      ctx.fill();
+
+      if (!items.length) {
+        const grad = ctx.createRadialGradient(0,0,inner,0,0,outer);
+        grad.addColorStop(0,"#252b48");
+        grad.addColorStop(1,"#131729");
+        ctx.beginPath();
+        ctx.arc(0,0,outer,0,TAU);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,.55)";
+        ctx.font = "900 42px Inter, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("İSİMLERİ GİR", 0, -5);
+        ctx.restore();
+        return;
+      }
+
+      const slice = TAU / items.length;
+      ctx.rotate(rotation);
+
+      items.forEach((item, index) => {
+        const start = index * slice - Math.PI / 2;
+        const end = start + slice;
+        const [c1, c2] = palette[index % palette.length];
+        const grad = ctx.createLinearGradient(-outer, -outer, outer, outer);
+        grad.addColorStop(0, c1);
+        grad.addColorStop(1, c2);
+
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.arc(0,0,outer,start,end);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.lineWidth = Math.max(2, 10 - items.length * .25);
+        ctx.strokeStyle = "rgba(255,255,255,.74)";
+        ctx.stroke();
+
+        const angle = start + slice / 2;
+        const radius = items.length > 16 ? outer * .69 : outer * .66;
+        ctx.save();
+        ctx.rotate(angle);
+        ctx.translate(radius,0);
+        ctx.rotate(Math.PI / 2);
+
+        const fontSize = Math.max(18, Math.min(42, 235 / Math.sqrt(items.length)));
+        ctx.font = `1000 ${fontSize}px Inter, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.lineWidth = Math.max(3, fontSize * .12);
+        ctx.strokeStyle = "rgba(0,0,0,.42)";
+        ctx.fillStyle = "#fff";
+        const maxChars = items.length > 20 ? 9 : items.length > 12 ? 12 : 16;
+        const label = fitText(item.name, maxChars);
+        ctx.strokeText(label,0,0);
+        ctx.fillText(label,0,0);
+        ctx.restore();
+      });
+
+      ctx.rotate(-rotation);
+      ctx.beginPath();
+      ctx.arc(0,0,inner,0,TAU);
+      ctx.fillStyle = "rgba(8,10,19,.92)";
+      ctx.fill();
+      ctx.lineWidth = 9;
+      ctx.strokeStyle = "rgba(255,255,255,.72)";
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawPreview() {
+      const preview = parseNames();
+      drawWheel(preview, 0);
+      if (!state.started) {
+        els.remainingList.innerHTML = preview.map(p => `<span class="chip">${escapeHtml(p.name)}</span>`).join("");
+        els.remainingHint.textContent = preview.length ? `${preview.length} isim hazır` : "İsim bekleniyor";
+      }
+    }
+
+    function escapeHtml(value) {
+      return value.replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"})[char]);
+    }
+
+    function renderAll() {
+      els.statusValue.textContent = state.finished ? "Bitti" : state.spinning ? "Çark dönüyor" : state.started ? "Oyunda" : "Hazır";
+      els.remainingValue.textContent = state.started ? state.remaining.length : "—";
+      els.roundValue.textContent = state.started ? state.round : "—";
+      els.giftValue.textContent = state.gift;
+      els.historyHint.textContent = `${state.history.length} eleme`;
+      els.remainingHint.textContent = state.started ? `${state.remaining.length} kişi çarkta` : "Henüz başlamadı";
+      els.wheelZone.classList.toggle("final-duel", state.started && state.remaining.length === 2);
+
+      els.remainingList.innerHTML = state.remaining.map(person =>
+        `<span class="chip ${state.remaining.length <= 2 ? "finalist" : ""}">${escapeHtml(person.name)}</span>`
+      ).join("");
+
+      els.historyList.innerHTML = state.history.length
+        ? state.history.map((entry, index) => `<div class="history-item"><span class="order">${index + 1}</span><strong>${escapeHtml(entry.name)}</strong></div>`).join("")
+        : `<div class="history-item"><span class="order">–</span><strong>Henüz kimse elenmedi</strong></div>`;
+
+      drawWheel();
+    }
+
+    function startGame() {
+      hideNotice();
+      const participants = parseNames();
+      if (participants.length < 2) {
+        showNotice("Oyunu başlatmak için en az iki farklı isim girmelisin.");
+        return;
+      }
+
+      state.started = true;
+      state.finished = false;
+      state.spinning = false;
+      state.participants = participants;
+      state.remaining = participants.map(p => ({...p}));
+      state.history = [];
+      state.gift = selectedGift();
+      state.round = 0;
+      state.rotation = 0;
+      state.pendingEliminated = null;
+
+      setSetupDisabled(true);
+      els.mainButton.textContent = "Çarkı Çevir";
+      els.mainButton.disabled = false;
+      els.liveBadge.textContent = "Oyun başladı";
+      els.stageIcon.textContent = "🎡";
+      els.stageKicker.textContent = "Çark hazır";
+      els.stageName.textContent = `${state.remaining.length} kişi`;
+      els.stageText.textContent = "Butona bas; çark bir kişiyi seçip oyundan çıkarsın.";
+      els.resultOverlay.classList.remove("show");
+      renderAll();
+      speak(`Oyun başladı. Kaybeden ${state.gift} ısmarlayacak.`);
+      playTone(520, .08, "sine", .06);
+    }
+
+    async function spinRound() {
+      if (!state.started || state.finished || state.spinning || state.remaining.length <= 1) return;
+      hideNotice();
+      state.spinning = true;
+      state.round += 1;
+      els.mainButton.disabled = true;
+      els.resetButton.disabled = true;
+
+      if (els.countdownToggle.checked) await runCountdown();
+
+      const selectedIndex = secureRandomIndex(state.remaining.length);
+      state.selectedIndex = selectedIndex;
+      const selected = state.remaining[selectedIndex];
+      const slice = TAU / state.remaining.length;
+      const selectedCenter = selectedIndex * slice + slice / 2;
+      const desiredModulo = -selectedCenter;
+      const currentModulo = ((state.rotation % TAU) + TAU) % TAU;
+      const desiredNormalized = ((desiredModulo % TAU) + TAU) % TAU;
+      const delta = ((desiredNormalized - currentModulo) + TAU) % TAU;
+      const turns = 6 + secureRandomIndex(4);
+      const startRotation = state.rotation;
+      const targetRotation = state.rotation + turns * TAU + delta;
+      const duration = state.remaining.length === 2 ? 6500 : 5100 + secureRandomIndex(900);
+
+      els.liveBadge.textContent = state.remaining.length === 2 ? "Final düellosu" : `Tur ${state.round}`;
+      els.stageIcon.textContent = state.remaining.length === 2 ? "⚔️" : "🌀";
+      els.stageKicker.textContent = "Çark dönüyor";
+      els.stageName.textContent = "Kim çıkacak?";
+      els.stageText.textContent = "Çark yavaşlıyor… gözler ibrede.";
+      els.wheelWrap.classList.add("spinning");
+      renderAll();
+      startTicks(duration);
+
+      await animateRotation(startRotation, targetRotation, duration);
+      stopTicks();
+      state.rotation = targetRotation % TAU;
+      drawWheel();
+      els.wheelWrap.classList.remove("spinning");
+      els.wheelWrap.classList.add("hit");
+      window.setTimeout(() => els.wheelWrap.classList.remove("hit"), 600);
+      playImpact();
+      burstSparks();
+
+      state.pendingEliminated = selected;
+      els.stageIcon.textContent = "💥";
+      els.stageKicker.textContent = "Çark seçti";
+      els.stageName.textContent = selected.name;
+      els.stageText.textContent = "Bu tur oyundan çıkıyor.";
+
+      window.setTimeout(() => showElimination(selected), 520);
+    }
+
+    function animateRotation(from, to, duration) {
+      return new Promise(resolve => {
+        const start = performance.now();
+        const easeOutQuint = t => 1 - Math.pow(1 - t, 5);
+        function frame(now) {
+          const progress = Math.min(1, (now - start) / duration);
+          state.rotation = from + (to - from) * easeOutQuint(progress);
+          drawWheel();
+          if (progress < 1) requestAnimationFrame(frame);
+          else resolve();
+        }
+        requestAnimationFrame(frame);
+      });
+    }
+
+    function runCountdown() {
+      return new Promise(resolve => {
+        let value = 3;
+        els.countdown.textContent = value;
+        els.countdown.classList.add("show");
+        els.stageKicker.textContent = "Hazır ol";
+        els.stageName.textContent = "Çark başlıyor";
+        playTone(480, .09, "sine", .055);
+
+        const timer = window.setInterval(() => {
+          value -= 1;
+          if (value > 0) {
+            els.countdown.classList.remove("show");
+            void els.countdown.offsetWidth;
+            els.countdown.textContent = value;
+            els.countdown.classList.add("show");
+            playTone(520 + (3 - value) * 70, .09, "sine", .055);
+          } else {
+            window.clearInterval(timer);
+            els.countdown.classList.remove("show");
+            playTone(820, .14, "triangle", .065);
+            resolve();
+          }
+        }, 680);
+      });
+    }
+
+    function showElimination(person) {
+      els.resultModal.classList.add("danger");
+      els.resultEmoji.textContent = "💥";
+      els.resultLabel.textContent = "Bu tur elenen";
+      els.resultName.textContent = person.name;
+      els.resultCopy.textContent = `${state.remaining.length - 1} kişi oyunda kalacak. Çark küçülüyor, gerilim yükseliyor.`;
+      els.continueButton.textContent = "Çarktan Çıkar";
+      els.continueButton.style.display = "inline-flex";
+      els.newGameButton.style.display = "none";
+      els.resultOverlay.classList.add("show");
+      speak(`${person.name} elendi.`);
+    }
+
+    function confirmElimination() {
+      const person = state.pendingEliminated;
+      if (!person) return;
+
+      const index = state.remaining.findIndex(p => p.id === person.id);
+      if (index >= 0) state.remaining.splice(index, 1);
+      state.history.push(person);
+      state.pendingEliminated = null;
+      state.rotation = 0;
+      state.spinning = false;
+      els.resultOverlay.classList.remove("show");
+
+      if (state.remaining.length === 1) {
+        finishGame();
+        return;
+      }
+
+      els.resetButton.disabled = false;
+      els.mainButton.disabled = false;
+      els.liveBadge.textContent = state.remaining.length === 2 ? "Final düellosu" : `${state.remaining.length} kişi kaldı`;
+      els.stageIcon.textContent = state.remaining.length === 2 ? "⚔️" : "🎯";
+      els.stageKicker.textContent = state.remaining.length === 2 ? "Son iki isim" : "Sıradaki tur";
+      els.stageName.textContent = state.remaining.length === 2 ? "Final başlıyor" : "Çarkı yeniden çevir";
+      els.stageText.textContent = state.remaining.length === 2
+        ? "Bir kişi kurtulacak, son kalan hesabı ödeyecek."
+        : `${state.remaining.length} kişi hâlâ oyunda.`;
+      renderAll();
+    }
+
+    function finishGame() {
+      const loser = state.remaining[0];
+      state.finished = true;
+      state.spinning = false;
+      els.resetButton.disabled = false;
+      els.mainButton.disabled = false;
+      els.mainButton.textContent = "Yeni Oyun";
+      els.liveBadge.textContent = "Final sonucu";
+      els.stageIcon.textContent = "🏆";
+      els.stageKicker.textContent = "Kaybeden belli oldu";
+      els.stageName.textContent = loser.name;
+      els.stageText.textContent = `${state.gift} ısmarlıyor!`;
+      renderAll();
+
+      window.setTimeout(() => {
+        els.resultModal.classList.remove("danger");
+        els.resultEmoji.textContent = "🏆";
+        els.resultLabel.textContent = "Gecenin kaybedeni";
+        els.resultName.textContent = loser.name;
+        els.resultCopy.textContent = `${state.gift} ısmarlıyor! Kaçış yok; çark kararını verdi.`;
+        els.continueButton.style.display = "none";
+        els.newGameButton.style.display = "inline-flex";
+        els.resultOverlay.classList.add("show");
+        createConfetti();
+        playVictory();
+        speak(`Kaybeden ${loser.name}. ${state.gift} ısmarlıyor.`);
+      }, 500);
+    }
+
+    function resetGame() {
+      stopTicks();
+      state.started = false;
+      state.spinning = false;
+      state.finished = false;
+      state.participants = [];
+      state.remaining = [];
+      state.history = [];
+      state.round = 0;
+      state.rotation = 0;
+      state.pendingEliminated = null;
+      state.gift = selectedGift();
+      window.speechSynthesis?.cancel();
+
+      setSetupDisabled(false);
+      els.resetButton.disabled = false;
+      els.mainButton.disabled = false;
+      els.mainButton.textContent = "Oyunu Başlat";
+      els.resultOverlay.classList.remove("show");
+      els.liveBadge.textContent = "Hazırlanıyor";
+      els.stageIcon.textContent = "🎯";
+      els.stageKicker.textContent = "Başlamaya hazır";
+      els.stageName.textContent = "Kim elenecek?";
+      els.stageText.textContent = "Oyunu başlat. Her turda çark bir kişiyi seçip oyundan çıkaracak.";
+      hideNotice();
+      updateNameCounter();
+      renderResetStats();
+      speak("Oyun sıfırlandı.");
+    }
+
+    function renderResetStats() {
+      els.statusValue.textContent = "Hazır";
+      els.remainingValue.textContent = "—";
+      els.roundValue.textContent = "—";
+      els.giftValue.textContent = selectedGift();
+      els.historyHint.textContent = "0 eleme";
+      els.historyList.innerHTML = `<div class="history-item"><span class="order">–</span><strong>Henüz kimse elenmedi</strong></div>`;
+      els.wheelZone.classList.remove("final-duel");
+      drawPreview();
+    }
+
+    function getAudioContext() {
+      if (!state.soundEnabled) return null;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      if (!state.audioContext) state.audioContext = new AudioCtx();
+      if (state.audioContext.state === "suspended") state.audioContext.resume();
+      return state.audioContext;
+    }
+
+    function playTone(freq, duration, type = "sine", volume = .04) {
+      const audio = getAudioContext();
+      if (!audio) return;
+      const osc = audio.createOscillator();
+      const gain = audio.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(volume, audio.currentTime);
+      gain.gain.exponentialRampToValueAtTime(.0001, audio.currentTime + duration);
+      osc.connect(gain).connect(audio.destination);
+      osc.start();
+      osc.stop(audio.currentTime + duration);
+    }
+
+    function startTicks(duration) {
+      stopTicks();
+      const start = performance.now();
+      function tick() {
+        if (!state.spinning) return;
+        const progress = Math.min(1, (performance.now() - start) / duration);
+        playTone(160 + progress * 500, .028, "square", .014);
+        const delay = 65 + Math.pow(progress, 3) * 330;
+        state.tickTimer = window.setTimeout(tick, delay);
+      }
+      tick();
+    }
+
+    function stopTicks() {
+      if (state.tickTimer) window.clearTimeout(state.tickTimer);
+      state.tickTimer = null;
+    }
+
+    function playImpact() {
+      playTone(120, .22, "sawtooth", .09);
+      window.setTimeout(() => playTone(62, .38, "sine", .09), 30);
+    }
+
+    function playVictory() {
+      [523,659,784,1047].forEach((freq,index) => window.setTimeout(() => playTone(freq,.28,"triangle",.06), index * 150));
+    }
+
+    function speak(text) {
+      if (!state.soundEnabled || !("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "tr-TR";
+      utterance.rate = .96;
+      utterance.pitch = 1.03;
+      utterance.volume = .9;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function createConfetti() {
+      const colors = ["#9b87ff", "#58e5ed", "#ff6685", "#ffca58", "#5ce2a2", "#ffffff"];
+      const amount = window.innerWidth < 600 ? 70 : 130;
+      for (let i = 0; i < amount; i += 1) {
+        const piece = document.createElement("span");
+        piece.className = "confetti";
+        piece.style.left = `${Math.random() * 100}vw`;
+        piece.style.background = colors[secureRandomIndex(colors.length)];
+        piece.style.animationDuration = `${2.8 + Math.random() * 3.1}s`;
+        piece.style.animationDelay = `${Math.random() * .55}s`;
+        piece.style.setProperty("--drift", `${-160 + Math.random() * 320}px`);
+        piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+        document.body.appendChild(piece);
+        window.setTimeout(() => piece.remove(), 6900);
+      }
+    }
+
+    function burstSparks() {
+      const rect = els.wheelWrap.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + 25;
+      const colors = ["#fff","#ffca58","#ff6685","#58e5ed"];
+      for (let i = 0; i < 26; i += 1) {
+        const spark = document.createElement("span");
+        const angle = (TAU * i) / 26 + Math.random() * .25;
+        const distance = 45 + Math.random() * 100;
+        spark.className = "spark";
+        spark.style.left = `${x}px`;
+        spark.style.top = `${y}px`;
+        spark.style.background = colors[secureRandomIndex(colors.length)];
+        spark.style.setProperty("--x", `${Math.cos(angle) * distance}px`);
+        spark.style.setProperty("--y", `${Math.sin(angle) * distance}px`);
+        document.body.appendChild(spark);
+        window.setTimeout(() => spark.remove(), 1000);
+      }
+    }
+
+    async function toggleFullscreen() {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+        else await document.exitFullscreen();
+      } catch (_) {
+        showNotice("Tarayıcı tam ekran moduna izin vermedi.");
+      }
+    }
+
+    els.namesInput.addEventListener("input", updateNameCounter);
+    els.customGift.addEventListener("input", () => { if (!state.started) els.giftValue.textContent = selectedGift(); });
+    document.querySelectorAll('input[name="gift"]').forEach(input => input.addEventListener("change", () => {
+      if (!state.started) els.giftValue.textContent = selectedGift();
+    }));
+
+    els.mainButton.addEventListener("click", () => {
+      getAudioContext();
+      if (state.finished) resetGame();
+      else if (!state.started) startGame();
+      else spinRound();
+    });
+
+    els.resetButton.addEventListener("click", resetGame);
+    els.continueButton.addEventListener("click", confirmElimination);
+    els.newGameButton.addEventListener("click", resetGame);
+    els.soundToggle.addEventListener("click", () => {
+      state.soundEnabled = !state.soundEnabled;
+      els.soundToggle.classList.toggle("off", !state.soundEnabled);
+      els.soundToggle.textContent = state.soundEnabled ? "🔊 Ses açık" : "🔇 Ses kapalı";
+      if (!state.soundEnabled) window.speechSynthesis?.cancel();
+      else { getAudioContext(); speak("Sesli sunucu açıldı."); }
+    });
+    els.fullscreenButton.addEventListener("click", toggleFullscreen);
+    document.addEventListener("fullscreenchange", () => {
+      els.fullscreenButton.textContent = document.fullscreenElement ? "✕ Tam ekrandan çık" : "⛶ Tam ekran";
+    });
+    window.addEventListener("resize", () => state.started ? drawWheel() : drawPreview());
+    document.addEventListener("keydown", event => {
+      if (event.code === "Space" && !["TEXTAREA","INPUT"].includes(document.activeElement.tagName)) {
+        event.preventDefault();
+        els.mainButton.click();
+      }
+      if (event.key === "Escape" && els.resultOverlay.classList.contains("show") && !state.finished) {
+        // Eleme sonucu onaylanmadan kapatılmasın.
+      }
+    });
+
+    updateNameCounter();
+    renderResetStats();
+  </script>
+</body>
+</html>
